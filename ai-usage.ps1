@@ -18,6 +18,7 @@
 #   ai-usage -ClaudeOnly / -CodexOnly / -Ascii
 #   ai-usage -Force       ignore the cache and ask the vendor now
 #   ai-usage -MaxAge 600  accept figures up to 10 minutes old
+#   ai-usage -Heal        run `claude doctor` on a profile whose token expired (rewrites its credentials)
 #   ai-usage -Demo        made-up figures from demo/fixture.json (screenshots, trying it out)
 #
 # Accounts come from config.json (see lib/config.ps1). With no config file, the single
@@ -39,7 +40,11 @@ param(
     # curious agent) from earning a rate limit.
     [int]$MaxAge = 120,
     [switch]$Force,
-    # Skip the auto-refresh of an expired token. For testing the raw report.
+    # When a Claude token looks expired, run `claude doctor` on that profile to refresh it.
+    # Off by default: doctor rewrites the profile's credential file, and a status tool
+    # should not change your login unless you ask it to.
+    [switch]$Heal,
+    # Accepted for older scripts that passed it. Healing is already off unless -Heal.
     [switch]$NoHeal,
     # Render made-up data from demo/fixture.json. Calls nothing and reads no credentials.
     [switch]$Demo
@@ -183,7 +188,7 @@ function Read-Profile($vendor, $a) {
     # which is the one you most need a number for. `claude doctor` is the vendor's own
     # health check: it starts no session and spends no quota, and it does refresh the
     # token. Measured: an account expired 684 minutes came back valid for 480.
-    if ($vendor -eq 'claude' -and $p.state.status -eq 'auth_required' -and -not $NoHeal) {
+    if ($vendor -eq 'claude' -and $p.state.status -eq 'auth_required' -and $Heal -and -not $NoHeal) {
         $dir = Dir-For 'claude' $a
         $prev = $env:CLAUDE_CONFIG_DIR
         try {
@@ -262,7 +267,7 @@ function Render-Card($e, $inner) {
     if ($e.Status -eq 'authrequired') {
         $lines += ''
         $lines += "$($C.grey)the access token expired$($C.reset)"
-        $lines += "$($C.grey)run claude doctor on this profile$($C.reset)"
+        $lines += "$($C.grey)run claude doctor, or ai-usage -Heal$($C.reset)"
         return $lines
     }
     if ($e.Status -eq 'ratelimited') {
@@ -343,7 +348,7 @@ function Render-Plain($entries) {
         if ($e.Status -eq 'signedout') { "$head not logged in"; continue }
         if ($e.Status -eq 'error') { "$head unavailable"; continue }
         if ($e.Status -eq 'ratelimited') { "$head rate limited by the quota endpoint$(if ($e.RetryAt) { ' - retry ' + (Format-Dur $e.RetryAt) })"; continue }
-        if ($e.Status -eq 'authrequired') { "$head sign-in expired - run: CLAUDE_CONFIG_DIR=$(Dir-For 'claude' (Get-FleetAccount $FleetCfg $e.Account)) claude doctor"; continue }
+        if ($e.Status -eq 'authrequired') { "$head sign-in expired - run: CLAUDE_CONFIG_DIR=$(Dir-For 'claude' (Get-FleetAccount $FleetCfg $e.Account)) claude doctor (or ai-usage -Heal)"; continue }
         $w = ($e.Windows | ForEach-Object { '{0} {1}% ({2})' -f $_.Label, [int]$_.Pct, $_.Reset }) -join ' | '
         $rw = if ($e.Runway) { " [$($e.Runway.text)]" } else { '' }
         $st = if ($e.Status -eq 'stale') { ' [STALE]' } else { '' }

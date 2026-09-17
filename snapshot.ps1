@@ -10,7 +10,7 @@
 #   snapshot            take one now
 #   snapshot -Restore   show the last snapshot with a resume command per session
 #   snapshot -Restore -All   include sessions that had already finished
-#   snapshot -Install   register the scheduled task (every 5 minutes, Windows only)
+#   snapshot -Install   register the scheduled task claude-fleet-snapshot (every 5 minutes, Windows only)
 #   snapshot -Demo      show the restore view for made-up sessions from demo/fixture.json
 #
 # Resume is `claude --resume <id>` / `codex resume <id>`, run from the session's own cwd
@@ -38,7 +38,8 @@ $LATEST = Join-Path $SNAP_DIR 'latest.json'
 
 if ($Install) {
     $ps = (Get-Process -Id $PID).Path
-    $task = 'ClaudeFleetSnapshot'
+    # Set "snapshotTaskName" in config.json to register it under another name.
+    $task = $FleetCfg.SnapshotTaskName
     $action = New-ScheduledTaskAction -Execute $ps -Argument "-NoProfile -WindowStyle Hidden -File `"$PSCommandPath`""
     # Every 5 minutes, indefinitely. RepetitionDuration of MaxValue means "forever"; a
     # finite duration silently stops repeating, which is the classic way these tasks die.

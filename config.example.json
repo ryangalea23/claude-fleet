@@ -10,5 +10,6 @@
   "lanesDir": "~/.claude/codex-lanes",
   "handoffDir": "~/.claude/handoffs",
   "vitalsLog": "~/.claude/vitals/samples.jsonl",
+  "snapshotTaskName": "claude-fleet-snapshot",
   "codexModels": { "fast": "gpt-5.6-luna" }
 }

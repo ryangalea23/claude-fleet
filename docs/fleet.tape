@@ -10,13 +10,14 @@ Set Padding 16
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 40ms
 
+# Startup is hidden so the first frame already shows the rendered dashboard.
 Hide
 Type "$PSStyle.OutputRendering = 'Ansi'; function prompt { '> ' }; Clear-Host"
 Enter
 Sleep 1s
+Type "./fleet.ps1 -Demo -Watch"
+Enter
+Sleep 4s
 Show
 
-Type "./fleet.ps1 -Demo -Watch"
-Sleep 400ms
-Enter
 Sleep 6s

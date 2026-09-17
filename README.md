@@ -19,7 +19,10 @@ ai-usage              # cards
 ai-usage -Plain       # one line per account, for scripts and agents
 ai-usage -Json
 ai-usage -Watch       # live, press q to quit
+ai-usage -Heal        # also refresh expired Claude tokens (see below)
 ```
+
+If a Claude token has expired, the account shows "sign-in expired". `-Heal` fixes that by running `claude doctor` on that account, which refreshes the token without starting a session or using quota. It rewrites that account's credential file, so it is off unless you pass `-Heal`. `-NoHeal` is still accepted and does nothing.
 
 ### fleet
 
@@ -65,6 +68,8 @@ snapshot              # take one now
 snapshot -Restore     # show the last one with a resume command per session
 snapshot -Install     # take one every 5 minutes with Task Scheduler
 ```
+
+`-Install` registers a task named `claude-fleet-snapshot`. Set `snapshotTaskName` in `config.json` to use another name.
 
 ### handoff
 

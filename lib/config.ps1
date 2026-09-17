@@ -24,6 +24,7 @@
 #   lanesDir    where codex-lane keeps lane folders (default ~/.claude/codex-lanes)
 #   handoffDir  where handoff writes hand-off files (default ~/.claude/handoffs)
 #   vitalsLog   the vitals sample log (default ~/.claude/vitals/samples.jsonl)
+#   snapshotTaskName  the Task Scheduler name snapshot -Install uses (default claude-fleet-snapshot)
 #   launch      how to start a CLI as an account in printed commands, e.g. "{vendor}-{account}"
 #               when you have claude-work / codex-work wrapper functions (profile.ps1 makes
 #               them). Without it, commands set CLAUDE_CONFIG_DIR / CODEX_HOME inline.
@@ -95,6 +96,7 @@ function Get-FleetConfig {
         LanesDir    = if ($raw -and $raw.lanesDir) { Expand-FleetPath $raw.lanesDir } else { Join-Path $HOME '.claude\codex-lanes' }
         HandoffDir  = if ($raw -and $raw.handoffDir) { Expand-FleetPath $raw.handoffDir } else { Join-Path $HOME '.claude\handoffs' }
         VitalsLog   = if ($raw -and $raw.vitalsLog) { Expand-FleetPath $raw.vitalsLog } else { Join-Path $HOME '.claude\vitals\samples.jsonl' }
+        SnapshotTaskName = if ($raw -and $raw.snapshotTaskName) { [string]$raw.snapshotTaskName } else { 'claude-fleet-snapshot' }
         Launch      = if ($raw -and $raw.launch) { [string]$raw.launch } else { $null }
         CodexModels = $models
     }
