@@ -98,6 +98,7 @@ A lane runs with nobody watching, so check these two settings before you start o
 
 - `-Sandbox` defaults to `workspace-write`: Codex can read files and edit files inside `-Dir`, but not elsewhere. `read-only` allows no edits. `danger-full-access` turns the sandbox off, so Codex can change any file your user account can, run any command, and use the network. Only pass it on purpose.
 - `-BypassHookTrust` is off by default. Codex will not run hooks from `~/.codex/hooks.json` until you approve them in an interactive session, and an unattended lane can't ask. With this switch the lane passes `--dangerously-bypass-hook-trust`, which runs every hook in that file without approval. Lanes work without it; only the hooks (such as the fleet state hook) stay silent. Use it only if you trust every hook in that file.
+- A lane keeps the sandbox it was started with, saved in its `meta.json`, and `resume` never changes it. A lane started with `danger-full-access` stays that way until you delete its folder and start a new one.
 
 ## Install
 

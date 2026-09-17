@@ -109,7 +109,9 @@ function Get-FleetAccount($cfg, [string]$name) {
     if (-not $a) {
         $known = ($cfg.Accounts | ForEach-Object Name) -join ', '
         $where = if ($cfg.Path) { $cfg.Path } else { 'no config.json, so only the default account exists' }
-        throw "unknown account '$name'. Configured: $known ($where)"
+        # $name is whatever the caller typed, so drop control characters before echoing it.
+        $shown = $name -replace '[\x00-\x1F\x7F-\x9F]', ' '
+        throw "unknown account '$shown'. Configured: $known ($where)"
     }
     return $a
 }

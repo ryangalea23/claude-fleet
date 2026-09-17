@@ -57,7 +57,8 @@ foreach ($k in $FleetCfg.CodexModels.Keys) { $ModelIds[$k] = $FleetCfg.CodexMode
 # An alias maps to its id; anything else is passed to codex as a model id unchanged.
 function Resolve-Model([string]$m) { if ($ModelIds.ContainsKey($m)) { $ModelIds[$m] } else { $m } }
 
-function Fail([string]$msg) { [Console]::Error.WriteLine("codex-lane: $msg"); exit 2 }
+# Messages often quote the bad value back, so clean it: a rejected name must not carry escape codes to the console.
+function Fail([string]$msg) { [Console]::Error.WriteLine("codex-lane: $(Clean-Text $msg)"); exit 2 }
 
 # Every value below ends up inside a cmd.exe /c line, where & | < > ^ and % mean something.
 # Accept only what each value should look like, and fail before any process starts.
