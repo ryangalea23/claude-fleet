@@ -1,0 +1,193 @@
+{
+  "_note": "Made-up data for the -Demo switch. Every project, prompt and id here is invented. Times are minutes from now (resetInMinutes, retryInMinutes) or minutes ago (idleMin, ageMin, takenMinutesAgo).",
+  "usage": [
+    {
+      "vendor": "claude", "account": "work", "status": "ok", "plan": "max", "source": "oauth",
+      "headPct": 58, "headLabel": "week", "headFull": "week",
+      "runway": { "text": "on pace {ok}", "tone": "ok" },
+      "windows": [
+        { "label": "session", "full": "session", "pct": 74, "resetInMinutes": 131, "marker": 44 },
+        { "label": "week", "full": "week", "pct": 58, "resetInMinutes": 4210, "marker": 42 },
+        { "label": "opus", "full": "Opus week", "pct": 81, "resetInMinutes": 4210, "marker": 42 }
+      ]
+    },
+    {
+      "vendor": "claude", "account": "personal", "status": "ok", "plan": "pro", "source": "oauth",
+      "headPct": 19, "headLabel": "session", "headFull": "session",
+      "runway": { "text": "empty in 52m", "tone": "warn" },
+      "windows": [
+        { "label": "session", "full": "session", "pct": 19, "resetInMinutes": 96, "marker": 32 },
+        { "label": "week", "full": "week", "pct": 63, "resetInMinutes": 7380, "marker": 88 },
+        { "label": "extra", "full": "extra usage", "pct": 90, "resetInMinutes": null, "marker": null }
+      ]
+    },
+    {
+      "vendor": "claude", "account": "lab", "status": "signedout", "plan": "", "source": "",
+      "headPct": null, "headLabel": "", "headFull": "", "runway": null, "windows": []
+    },
+    {
+      "vendor": "codex", "account": "work", "status": "ok", "plan": "pro", "source": "oauth",
+      "headPct": 71, "headLabel": "week", "headFull": "week",
+      "runway": { "text": "on pace {ok}", "tone": "ok" },
+      "windows": [
+        { "label": "week", "full": "week", "pct": 71, "resetInMinutes": 5630, "marker": 56 },
+        { "label": "spark 5h", "full": "GPT Spark session", "pct": 100, "resetInMinutes": 300, "marker": 100 },
+        { "label": "spark wk", "full": "GPT Spark week", "pct": 96, "resetInMinutes": 5630, "marker": 56 }
+      ]
+    },
+    {
+      "vendor": "codex", "account": "personal", "status": "ok", "plan": "plus", "source": "oauth",
+      "headPct": 34, "headLabel": "week", "headFull": "week",
+      "runway": { "text": "empty in 1d 6h", "tone": "warn" },
+      "windows": [
+        { "label": "week", "full": "week", "pct": 34, "resetInMinutes": 3050, "marker": 30 },
+        { "label": "spark 5h", "full": "GPT Spark session", "pct": 100, "resetInMinutes": 300, "marker": 100 }
+      ]
+    },
+    {
+      "vendor": "codex", "account": "lab", "status": "ratelimited", "plan": "", "source": "",
+      "headPct": null, "headLabel": "", "headFull": "", "runway": null, "windows": [], "retryInMinutes": 3
+    }
+  ],
+  "claude": [
+    {
+      "account": "work", "where": "billing-service", "state": "WAITING", "idleMin": 2, "ageMin": 95,
+      "done": 5, "total": 8, "plan": "2026-09-10-invoice-retries",
+      "name": "billing-service-k3", "branch": "feat/invoice-retries",
+      "chat": "Add retry with backoff to the invoice sender and cover it with tests",
+      "ask": "Run the integration suite again and tell me what still fails",
+      "doing": "Two tests still fail in webhook_test.go. Both expect the old status code. Want me to update them?"
+    },
+    {
+      "account": "personal", "where": "docs-site", "state": "WAITING", "idleMin": 6, "ageMin": 40,
+      "name": "Docs refresh", "branch": null,
+      "chat": "Rewrite the getting started page so a new user can run the CLI in five minutes",
+      "ask": "Looks good, now do the install page",
+      "doing": "Draft is ready in docs/install.md. Should the Windows steps come first or last?"
+    },
+    {
+      "account": "work", "where": "api-server", "state": "working", "idleMin": 0, "ageMin": 210,
+      "done": 7, "total": 9, "plan": "2026-09-12-rate-limiter",
+      "name": "api-server-a9", "branch": "rate-limiter",
+      "chat": "Replace the in-memory rate limiter with a Redis token bucket",
+      "ask": "Continue with task 8", "doing": "Bash"
+    },
+    {
+      "account": "work", "where": "api-server", "state": "working", "idleMin": 1, "ageMin": 35,
+      "name": "api-server-7f", "branch": "fix/pagination-cursor",
+      "chat": "The /orders endpoint returns duplicates on page 2 when two rows share a timestamp",
+      "ask": "Find the root cause before changing anything", "doing": "Grep"
+    },
+    {
+      "account": "lab", "where": "mobile-app", "state": "working", "idleMin": 1, "ageMin": 18,
+      "name": "Dark mode", "branch": "dark-mode",
+      "chat": "Add a dark theme that follows the system setting",
+      "ask": "Start with the settings screen", "doing": "Edit"
+    },
+    {
+      "account": "personal", "where": "data-pipeline", "state": "working", "idleMin": 3, "ageMin": 64,
+      "done": 1, "total": 6, "plan": "2026-09-14-nightly-backfill",
+      "name": "data-pipeline-2c", "branch": null,
+      "chat": "Write a backfill job for the events table and make it safe to re-run",
+      "ask": "Go ahead with task 2", "doing": "Write"
+    },
+    {
+      "account": "work", "where": "infra", "state": "idle", "idleMin": 22, "ageMin": 300,
+      "name": "infra-b1", "branch": null,
+      "chat": "Why did the staging deploy take 40 minutes last night?",
+      "ask": "Thanks, that answers it", "doing": "The slow step was the image build. The layer cache was cleared by the runner upgrade."
+    },
+    {
+      "account": "lab", "where": "cli-tool", "state": "idle", "idleMin": 48, "ageMin": 130,
+      "name": "cli-tool-9d", "branch": "release-1.4",
+      "chat": "Prepare the 1.4 release notes from the merged pull requests",
+      "ask": "Ship it", "doing": "Release notes are in CHANGELOG.md."
+    }
+  ],
+  "codex": [
+    {
+      "account": "work", "where": "search-index", "state": "working", "idleMin": 0, "ageMin": 12,
+      "title": "Speed up the nightly reindex",
+      "chat": "Profile the reindex job and find the slowest step",
+      "doing": "shell", "model": "gpt-5.6-terra", "source": "exec",
+      "threadId": "7c0e5b2a-41d9-4f3e-8a6b-2d91c4e7f035", "parentId": null
+    },
+    {
+      "account": "personal", "where": "fix/flaky-tests", "state": "WAITING", "idleMin": 4, "ageMin": 55,
+      "title": "Find the flaky test in the payments suite",
+      "chat": "Run the payments suite 20 times and report which tests fail",
+      "doing": "test_refund_partial fails 3 of 20 runs. It depends on wall clock time.",
+      "model": "gpt-5.6-sol", "source": "cli",
+      "threadId": "b58d2f16-93ae-4c07-b1e4-6fa2d8c90e47", "parentId": null
+    },
+    {
+      "account": "work", "where": "review-lane", "state": "working", "idleMin": 1, "ageMin": 9,
+      "title": "Review the rate limiter branch",
+      "chat": "Review the rate-limiter branch for correctness bugs",
+      "doing": "apply_patch", "model": "gpt-5.6-terra", "source": "exec",
+      "threadId": "e2a47c93-0b6f-4d18-9e35-c81b5a6f2d04", "parentId": "5f9b1e7d-2c48-4a60-b3d7-94e0a1c6f852"
+    },
+    {
+      "account": "work", "where": "review-lane", "state": "working", "idleMin": 2, "ageMin": 9,
+      "title": "Review the rate limiter branch",
+      "chat": "Review the rate-limiter branch for correctness bugs",
+      "doing": "shell", "model": "gpt-5.6-terra", "source": "exec",
+      "threadId": "0d63a8f4-5e21-4b9c-a7f0-3b2e6c9d8a15", "parentId": "5f9b1e7d-2c48-4a60-b3d7-94e0a1c6f852"
+    },
+    {
+      "account": "lab", "where": "docs-site", "state": "done", "idleMin": 140, "ageMin": 190,
+      "title": "Check every docs link",
+      "chat": "Crawl the docs site and list broken links",
+      "doing": "Found 4 broken links. The list is in broken-links.txt.",
+      "model": "gpt-5.6-luna", "source": "exec",
+      "threadId": "91f4c6e8-7a3d-4b52-8e0c-a4d7b2f9c613", "parentId": null
+    }
+  ],
+  "snapshot": {
+    "takenMinutesAgo": 3,
+    "sessions": [
+      {
+        "vendor": "claude", "account": "work", "id": "3f2a9c1e-7b4d-4e8a-9c21-5d6e7f809a1b",
+        "cwd": "C:\\dev\\billing-service", "where": "billing-service", "state": "waiting",
+        "title": "Add retry with backoff to the invoice sender and cover it with tests",
+        "resume": "cd 'C:\\dev\\billing-service'; claude-work --resume 3f2a9c1e-7b4d-4e8a-9c21-5d6e7f809a1b"
+      },
+      {
+        "vendor": "claude", "account": "work", "id": "a81c4d27-5e90-4f3b-8d16-2c7e9b0a4f58",
+        "cwd": "C:\\dev\\api-server", "where": "api-server", "state": "working",
+        "title": "Replace the in-memory rate limiter with a Redis token bucket",
+        "resume": "cd 'C:\\dev\\api-server'; claude-work --resume a81c4d27-5e90-4f3b-8d16-2c7e9b0a4f58"
+      },
+      {
+        "vendor": "claude", "account": "personal", "id": "6d0b3e85-c214-4a97-b5f8-1e3a7c62d9f0",
+        "cwd": "C:\\dev\\docs-site", "where": "docs-site", "state": "waiting",
+        "title": "Rewrite the getting started page so a new user can run the CLI in five minutes",
+        "resume": "cd 'C:\\dev\\docs-site'; claude-personal --resume 6d0b3e85-c214-4a97-b5f8-1e3a7c62d9f0"
+      },
+      {
+        "vendor": "claude", "account": "lab", "id": "c47e1a90-8b35-4d62-9f0a-7e2b5d84c163",
+        "cwd": "C:\\dev\\mobile-app", "where": "mobile-app", "state": "working",
+        "title": "Add a dark theme that follows the system setting",
+        "resume": "cd 'C:\\dev\\mobile-app'; claude-lab --resume c47e1a90-8b35-4d62-9f0a-7e2b5d84c163"
+      },
+      {
+        "vendor": "codex", "account": "work", "id": "7c0e5b2a-41d9-4f3e-8a6b-2d91c4e7f035",
+        "cwd": "C:\\dev\\search-index", "where": "search-index", "state": "working",
+        "title": "Profile the reindex job and find the slowest step",
+        "resume": "cd 'C:\\dev\\search-index'; codex-work resume 7c0e5b2a-41d9-4f3e-8a6b-2d91c4e7f035"
+      },
+      {
+        "vendor": "codex", "account": "personal", "id": "b58d2f16-93ae-4c07-b1e4-6fa2d8c90e47",
+        "cwd": "C:\\dev\\payments", "where": "payments", "state": "waiting",
+        "title": "Run the payments suite 20 times and report which tests fail",
+        "resume": "cd 'C:\\dev\\payments'; codex-personal resume b58d2f16-93ae-4c07-b1e4-6fa2d8c90e47"
+      },
+      {
+        "vendor": "claude", "account": "lab", "id": "d19a6f3c-2e87-4b05-a4c9-8f1d0e6b7a24",
+        "cwd": "C:\\dev\\cli-tool", "where": "cli-tool", "state": "ended",
+        "title": "Prepare the 1.4 release notes from the merged pull requests",
+        "resume": "cd 'C:\\dev\\cli-tool'; claude-lab --resume d19a6f3c-2e87-4b05-a4c9-8f1d0e6b7a24"
+      }
+    ]
+  }
+}

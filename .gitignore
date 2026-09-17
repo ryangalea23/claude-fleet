@@ -1,0 +1,28 @@
+# Allowlist: ignore everything, then un-ignore only what ships.
+# config.json is personal and is never listed here.
+*
+!.gitignore
+!LICENSE
+!README.md
+!config.example.json
+!profile.ps1
+!ai-usage.ps1
+!fleet.ps1
+!dash.ps1
+!vitals.ps1
+!snapshot.ps1
+!handoff.ps1
+!codex-lane.ps1
+!lib/
+!lib/tui.ps1
+!lib/config.ps1
+!lib/codex-threads.js
+!hooks/
+!hooks/fleet-hook.js
+!demo/
+!demo/fixture.json
+!docs/
+!docs/dash.tape
+!docs/fleet.tape
+!docs/dash.gif
+!docs/fleet.gif

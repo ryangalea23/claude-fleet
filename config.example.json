@@ -1,0 +1,14 @@
+{
+  "_comment": "Copy to config.json and edit. The first account uses ~/.claude and ~/.codex. Later ones default to ~/.claude-<name> and ~/.codex-<name>. Every key except accounts is optional.",
+  "accounts": [
+    "work",
+    "personal",
+    { "name": "lab", "claudeDir": "~/agents/claude-lab", "codexDir": "~/agents/codex-lab" }
+  ],
+  "launch": "{vendor}-{account}",
+  "stateDir": "~/.claude/fleet",
+  "lanesDir": "~/.claude/codex-lanes",
+  "handoffDir": "~/.claude/handoffs",
+  "vitalsLog": "~/.claude/vitals/samples.jsonl",
+  "codexModels": { "fast": "gpt-5.6-luna" }
+}
