@@ -57,9 +57,23 @@ function Vis-Len($s) { ($s -replace "$([regex]::Escape($script:ESC))\[[0-9;]*m",
 
 function Pad-To($s, $w) { $s + (' ' * [Math]::Max(0, $w - (Vis-Len $s))) }
 
+# Text from transcripts, hooks, Codex and vendor APIs is untrusted. A title holding an
+# escape sequence could clear the screen, retitle the terminal, or write the clipboard
+# (OSC 52) the moment it is printed. Replace every control character with a space: C0
+# (0x00-0x1F, which includes ESC and BEL), DEL, and C1 (0x80-0x9F). Everything else,
+# accents and CJK included, is left alone. -KeepLines keeps newline and tab for
+# multi-line text such as a Codex answer.
+function Clean-Text($s, [switch]$KeepLines) {
+    if ($null -eq $s) { return '' }
+    $rx = if ($KeepLines) { '[\x00-\x08\x0B-\x1F\x7F-\x9F]' } else { '[\x00-\x1F\x7F-\x9F]' }
+    return [regex]::Replace([string]$s, $rx, ' ')
+}
+
+# Callers pass plain text, never text that already carries this tool's own colour codes,
+# so it is safe to clean here: colour is added around the result, not inside it.
 function Fit($s, $w) {
     if ($null -eq $s) { return '' }
-    $s = ($s -replace '\s+', ' ').Trim()
+    $s = ((Clean-Text $s) -replace '\s+', ' ').Trim()
     if ($s.Length -le $w) { return $s }
     return $s.Substring(0, [Math]::Max(1, $w - 1)) + $script:G.ellipsis
 }

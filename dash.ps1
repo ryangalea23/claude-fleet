@@ -81,7 +81,8 @@ function Format-Age($since) {
 }
 
 function Render-UsageLine($e, $barW) {
-    $lab = Pad-To ("{0} {1}" -f $e.Vendor, $e.Account) 16
+    # Everything here arrives as JSON from ai-usage, so clean it before it is printed.
+    $lab = Pad-To ("{0} {1}" -f (Clean-Text $e.Vendor), (Clean-Text $e.Account)) 16
     if ($e.Status -eq 'signedout') { return "$($C.grey)$lab signed out$($C.reset)" }
     if ($e.Status -eq 'error') { return "$($C.grey)$lab$($C.reset) $($C.red)unavailable$($C.reset)" }
     # An empty bar reading "?%" looks like the dashboard is broken. It is not: the quota
@@ -96,9 +97,9 @@ function Render-UsageLine($e, $barW) {
     $pctTxt = if ($null -ne $e.HeadPct) { '{0,3}%' -f [int]$e.HeadPct } else { '  ?%' }
 
     $tail = @()
-    if ($e.HeadLabel) { $tail += $e.HeadLabel }
+    if ($e.HeadLabel) { $tail += (Clean-Text $e.HeadLabel) }
     if ($e.Status -eq 'stale') { $tail += "$($C.yellow)stale$($C.reset)" }
-    elseif ($e.Runway) { $tail += "$($C.grey)$($e.Runway)$($C.reset)" }
+    elseif ($e.Runway) { $tail += "$($C.grey)$(Clean-Text $e.Runway)$($C.reset)" }
 
     "$lab $bar $pc$pctTxt$($C.reset) $($tail -join ' ')"
 }

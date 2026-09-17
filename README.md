@@ -12,7 +12,7 @@ Both recordings use made-up data from `demo/fixture.json`. Run any of them with 
 
 ### ai-usage
 
-Shows how much plan usage is left on every Claude Code and Codex account. Every number is headroom left, not usage spent. It gets the figures from [quota-axi](https://github.com/kunchenguid/quota-axi), which reads each account's own credential file and asks the vendor. It does not start a model turn, so checking costs nothing. Results are cached for two minutes so a dashboard can't get you rate limited.
+Shows how much plan usage is left on every Claude Code and Codex account. Every number is headroom left, not usage spent. It gets the figures from [quota-axi](https://github.com/kunchenguid/quota-axi), a separate npm package. quota-axi reads your Claude Code and Codex login credential files (`.credentials.json` and `auth.json`) and sends those tokens to the vendors' usage endpoints. Because it handles your logins, and because npm packages can run scripts when they install, read [its source](https://github.com/kunchenguid/quota-axi) before you install it. It does not start a model turn, so checking costs nothing. Results are cached for two minutes so a dashboard can't get you rate limited.
 
 ```powershell
 ai-usage              # cards
@@ -92,7 +92,12 @@ codex-lane resume -Name review -Prompt "Now check the tests too."
 codex-lane list
 ```
 
-`-Model` takes the built-in aliases `luna`, `terra`, `sol` and `astra`, any alias you add in `codexModels`, or a full model id.
+`-Model` takes the built-in aliases `luna`, `terra`, `sol` and `astra`, any alias you add in `codexModels`, or a full model id. Model ids may only use letters, digits, `.`, `_`, `:` and `-`.
+
+A lane runs with nobody watching, so check these two settings before you start one:
+
+- `-Sandbox` defaults to `workspace-write`: Codex can read files and edit files inside `-Dir`, but not elsewhere. `read-only` allows no edits. `danger-full-access` turns the sandbox off, so Codex can change any file your user account can, run any command, and use the network. Only pass it on purpose.
+- `-BypassHookTrust` is off by default. Codex will not run hooks from `~/.codex/hooks.json` until you approve them in an interactive session, and an unattended lane can't ask. With this switch the lane passes `--dangerously-bypass-hook-trust`, which runs every hook in that file without approval. Lanes work without it; only the hooks (such as the fleet state hook) stay silent. Use it only if you trust every hook in that file.
 
 ## Install
 
@@ -121,6 +126,12 @@ codex-lane list
    ```
 
    For Codex, add the same four events to `~/.codex/hooks.json` with `fleet-hook.js codex`. The hook writes one small JSON file per session and never blocks the agent.
+
+   Privacy: each file holds plain text copies of the first 400 characters of the session's first prompt, its latest prompt, and the agent's latest reply, plus the working folder. The files live in `<stateDir>/claude/` and `<stateDir>/codex/` (by default `~/.claude/fleet/claude` and `~/.claude/fleet/codex`). Nothing prunes them, so they grow by one file per session. To clear them, delete those two folders; the hook recreates them as needed:
+
+   ```powershell
+   Remove-Item ~/.claude/fleet/claude, ~/.claude/fleet/codex -Recurse
+   ```
 
 5. Optional: if you ask your agents to track plan progress, have them write `<stateDir>/<session-id>.json` containing `{"plan":"my-plan","done":3,"total":8,"current":4}`. `fleet` shows it as a progress bar.
 

@@ -160,6 +160,7 @@ function Format-Runway($ea) {
 # Vendor labels are written for a wide dashboard; the label column is 9 chars.
 # Map the ones we know rather than truncating them into mush ("Fable we.").
 function Short-Label($label) {
+    $label = Clean-Text $label
     switch -Regex ($label) {
         '^session$' { return 'session' }
         '^week$' { return 'week' }
@@ -204,8 +205,9 @@ function Read-Profile($vendor, $a) {
         $p = if ($j) { $j.providers | Select-Object -First 1 } else { $p }
     }
 
-    $o.Plan = $p.plan
-    $o.Source = $p.source
+    # Vendor strings are untrusted text; clean them once here so every view is safe.
+    $o.Plan = Clean-Text $p.plan
+    $o.Source = Clean-Text $p.source
     # The quota endpoint rate limits if you ask too often - easy to hit with a live
     # dashboard, or just by running this a few times in a row. It is not "unknown", it is
     # "ask again at X", and saying so stops it looking like the tool is broken.
@@ -222,7 +224,7 @@ function Read-Profile($vendor, $a) {
             ($p.windows | Where-Object { $_.id -eq $id } | Select-Object -First 1).label
         }
         $kept = @($labels | Where-Object { $_ })
-        $o.HeadFull = ($kept -join ' + ')
+        $o.HeadFull = Clean-Text ($kept -join ' + ')
         $o.HeadLabel = (@($kept | ForEach-Object { Short-Label $_ }) -join ' + ')
         if (-not $o.HeadLabel) { $o.HeadLabel = 'all models' }
         $o.Runway = Format-Runway $ea
@@ -230,7 +232,7 @@ function Read-Profile($vendor, $a) {
     $o.Windows = foreach ($w in $p.windows) {
         [pscustomobject]@{
             Label  = Short-Label $w.label
-            Full   = $w.label
+            Full   = Clean-Text $w.label
             Pct    = $w.percentRemaining
             Reset  = Format-Dur $w.resetsAt
             # The marker sits at "spent perfectly linearly", so bar past marker = under pace.
@@ -384,17 +386,17 @@ function Get-DemoEntries {
         $u = Resolve-DemoEntry $raw $DemoTick
         $runway = if ($u.runway) {
             $col = switch ($u.runway.tone) { 'ok' { $C.green } 'bad' { $C.red } default { $C.yellow } }
-            $txt = $u.runway.text -replace '\{ok\}', $G.ok
+            $txt = (Clean-Text $u.runway.text) -replace '\{ok\}', $G.ok
             @{ text = $txt; color = $col }
         } else { $null }
         [pscustomobject]@{
-            Vendor = $u.vendor; Account = $u.account; Status = $u.status; Plan = $u.plan; Source = $u.source
-            HeadPct = $u.headPct; HeadLabel = $u.headLabel; HeadFull = $u.headFull; Runway = $runway
+            Vendor = $u.vendor; Account = (Clean-Text $u.account); Status = $u.status; Plan = (Clean-Text $u.plan); Source = (Clean-Text $u.source)
+            HeadPct = $u.headPct; HeadLabel = (Clean-Text $u.headLabel); HeadFull = (Clean-Text $u.headFull); Runway = $runway
             RetryAt = if ($null -ne $u.retryInMinutes) { $now.AddMinutes($u.retryInMinutes).ToString('o') } else { $null }
             Windows = @(foreach ($w in @($u.windows)) {
                 [pscustomobject]@{
-                    Label  = $w.label
-                    Full   = $w.full
+                    Label  = Clean-Text $w.label
+                    Full   = Clean-Text $w.full
                     # A step can move one window's bar: "windowPct": { "session": 17 }.
                     Pct    = if ($u.windowPct -and $null -ne $u.windowPct.($w.label)) { $u.windowPct.($w.label) } else { $w.pct }
                     Reset  = if ($null -ne $w.resetInMinutes) { Format-Dur ($now.AddMinutes($w.resetInMinutes + 0.5).ToString('o')) } else { '-' }

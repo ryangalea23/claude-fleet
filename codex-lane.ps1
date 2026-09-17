@@ -37,13 +37,19 @@ param(
   [string]$Model,
   [ValidateSet('low', 'medium', 'high', 'xhigh', 'max')][string]$Effort,
   [string]$Dir,
-  [ValidateSet('read-only', 'workspace-write', 'danger-full-access')][string]$Sandbox = 'danger-full-access',
+  # workspace-write lets Codex edit files inside -Dir only. danger-full-access removes the
+  # sandbox entirely (any file, any command, network) and must be asked for explicitly.
+  [ValidateSet('read-only', 'workspace-write', 'danger-full-access')][string]$Sandbox = 'workspace-write',
+  # Pass --dangerously-bypass-hook-trust to codex, so hooks in ~/.codex/hooks.json run in an
+  # unattended lane. Off by default; lanes run fine without it, the hooks just do not fire.
+  [switch]$BypassHookTrust,
   [switch]$NoWait,
   [switch]$Wait,
   [int]$Turn  # internal, used by 'run'
 )
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\lib\config.ps1"
+. "$PSScriptRoot\lib\tui.ps1"
 $FleetCfg = Get-FleetConfig
 $Root = $FleetCfg.LanesDir
 $ModelIds = @{ luna = 'gpt-5.6-luna'; terra = 'gpt-5.6-terra'; sol = 'gpt-5.6-sol'; astra = 'gpt-6-astra' }
@@ -52,6 +58,17 @@ foreach ($k in $FleetCfg.CodexModels.Keys) { $ModelIds[$k] = $FleetCfg.CodexMode
 function Resolve-Model([string]$m) { if ($ModelIds.ContainsKey($m)) { $ModelIds[$m] } else { $m } }
 
 function Fail([string]$msg) { [Console]::Error.WriteLine("codex-lane: $msg"); exit 2 }
+
+# Every value below ends up inside a cmd.exe /c line, where & | < > ^ and % mean something.
+# Accept only what each value should look like, and fail before any process starts.
+function Assert-ModelId([string]$m) {
+  $id = Resolve-Model $m
+  if ($id -notmatch '^[A-Za-z0-9._:-]+$') { Fail "model '$m' is not a valid model id (letters, digits, . _ : - only)" }
+  return $id
+}
+function Assert-CmdPath([string]$what, [string]$p) {
+  if ($p -match '["%\r\n]') { Fail "$what '$p' contains a character that is unsafe on a cmd.exe line (a double quote, a percent sign or a newline)" }
+}
 
 function Get-LaneDir {
   if (-not $Name) { Fail '-Name is required' }
@@ -87,11 +104,11 @@ function Show-Progress([string]$d, [int]$t) {
     $text = if ($i.command) { $i.command } elseif ($i.text) { $i.text } else { '' }
     $text = ($text -replace '\s+', ' ')
     if ($text.Length -gt 160) { $text = $text.Substring(0, 160) + '...' }
-    "  - [$($i.type)] $text"
+    "  - [$($i.type)] $(Clean-Text $text)"
   }
   $doneIds = @($items | ForEach-Object { $_.id })
   foreach ($i in @($events | Where-Object { $_.type -eq 'item.started' -and $_.item.id -notin $doneIds } | ForEach-Object { $_.item })) {
-    "  - [running now: $($i.type)] $($i.command)"
+    "  - [running now: $($i.type)] $(Clean-Text $i.command)"
   }
 }
 
@@ -100,7 +117,8 @@ function Show-Tail([string]$path, [int]$chars) {
   $s = Get-Content $path -Raw
   if (-not $s) { return }
   if ($s.Length -gt $chars) { $s = '...' + $s.Substring($s.Length - $chars) }
-  $s
+  # Codex output is untrusted: keep its lines, drop any escape sequences.
+  Clean-Text $s -KeepLines
 }
 
 function Start-Turn([string]$d, [int]$t) {
@@ -198,6 +216,9 @@ switch ($Action) {
     if (-not (Test-Path $PromptFile -PathType Leaf)) { Fail "prompt file not found: $PromptFile" }
     if (-not (Test-Path $Dir -PathType Container)) { Fail "folder not found: $Dir" }
     try { $acc = Get-FleetAccount $FleetCfg $Account } catch { Fail $_.Exception.Message }
+    $null = Assert-ModelId $Model
+    Assert-CmdPath 'folder' (Resolve-Path $Dir).Path
+    Assert-CmdPath 'lane folder' $d
     New-Item -ItemType Directory -Force $d | Out-Null
     Copy-Item $PromptFile (TurnFile $d 1 'prompt.md')
     Write-Meta $d ([pscustomobject]@{
@@ -206,6 +227,7 @@ switch ($Action) {
         codexHome = $acc.CodexEnv
         dir       = (Resolve-Path $Dir).Path
         sandbox   = $Sandbox
+        bypassHookTrust = [bool]$BypassHookTrust
         created   = (Get-Date).ToString('o')
         turns     = @([pscustomobject]@{ n = 1; model = $Model; effort = $Effort; started = (Get-Date).ToString('o') })
       })
@@ -224,6 +246,8 @@ switch ($Action) {
     }
     if (-not (Get-SessionId $d)) { Fail "lane '$Name' has no Codex session id in turn-1.jsonl, so it can't be resumed" }
     if ([bool]$Prompt -eq [bool]$PromptFile) { Fail 'resume needs exactly one of -Prompt or -PromptFile' }
+    if ($Model) { $null = Assert-ModelId $Model }
+    if ($BypassHookTrust) { $m | Add-Member -Force NoteProperty bypassHookTrust $true }
     $t = $last.n + 1
     if ($PromptFile) {
       if (-not (Test-Path $PromptFile -PathType Leaf)) { Fail "prompt file not found: $PromptFile" }
@@ -259,7 +283,7 @@ switch ($Action) {
                  $p = if (Test-Path $pf) { Get-Process -Id ([int](Get-Content $pf)) -ErrorAction SilentlyContinue }
                  if ($p -and $p.ProcessName -eq 'pwsh') { 'running' } else { 'died (resumable)' }
                }
-      '{0,-28} turn {1}  {2,-18} {3}/{4}  {5}  {6}' -f $m.name, $tm.n, $state, $tm.model, $tm.effort, $m.account, $m.dir
+      Clean-Text ('{0,-28} turn {1}  {2,-18} {3}/{4}  {5}  {6}' -f $m.name, $tm.n, $state, $tm.model, $tm.effort, $m.account, $m.dir)
     }
   }
 
@@ -271,16 +295,26 @@ switch ($Action) {
     if (-not $tm) { Fail "turn $Turn not found in meta.json" }
     if ($m.codexHome) { $env:CODEX_HOME = $m.codexHome } else { Remove-Item Env:CODEX_HOME -ErrorAction SilentlyContinue }
     $env:NODE_OPTIONS = '--max-old-space-size=4096'
-    # --dangerously-bypass-hook-trust: a lane runs unattended, so there is nobody to approve
-    # a hook. Codex marks every hooks.json entry untrusted until approved interactively, and
-    # the trust state cannot be pre-seeded in the file (tried; it stays untrusted). Without
-    # this flag any state hooks in ~/.codex/hooks.json (like hooks/fleet-hook.js) never run.
-    $common = "-m $(Resolve-Model $tm.model) -c model_reasoning_effort=$($tm.effort) --skip-git-repo-check --dangerously-bypass-hook-trust --json"
+    # Re-check everything that goes on the cmd line: meta.json is a file on disk and could
+    # have been edited since start.
+    $modelId = Assert-ModelId $tm.model
+    if ($tm.effort -notin 'low', 'medium', 'high', 'xhigh', 'max') { Fail "effort '$($tm.effort)' is not allowed" }
+    if ($m.sandbox -notin 'read-only', 'workspace-write', 'danger-full-access') { Fail "sandbox '$($m.sandbox)' is not allowed" }
+    Assert-CmdPath 'folder' $m.dir
+    Assert-CmdPath 'lane folder' $d
+    # --dangerously-bypass-hook-trust, only when the lane was started with -BypassHookTrust:
+    # a lane runs unattended, so there is nobody to approve a hook. Codex marks every
+    # hooks.json entry untrusted until approved interactively, and the trust state cannot be
+    # pre-seeded in the file. Without the flag the lane still runs; its hooks do not.
+    $trust = if ($m.bypassHookTrust) { ' --dangerously-bypass-hook-trust' } else { '' }
+    $common = "-m $modelId -c model_reasoning_effort=$($tm.effort) --skip-git-repo-check$trust --json"
     $cmd = if ($Turn -eq 1) {
       "codex exec $common -C `"$($m.dir)`" -s $($m.sandbox) --color never"
     } else {
       # 'exec resume' has no -C/-s flags: run from the lane folder and set the sandbox through config
-      "codex exec resume $(Get-SessionId $d) $common -c sandbox_mode=$($m.sandbox)"
+      $sid = Get-SessionId $d
+      if ("$sid" -notmatch '^[A-Za-z0-9-]+$') { Fail "session id '$sid' in turn-1.jsonl is not valid" }
+      "codex exec resume $sid $common -c sandbox_mode=$($m.sandbox)"
     }
     $line = "$cmd -o `"$(TurnFile $d $Turn 'last.md')`" - < `"$(TurnFile $d $Turn 'prompt.md')`" > `"$(TurnFile $d $Turn 'jsonl')`" 2> `"$(TurnFile $d $Turn 'err.txt')`""
     $rc = 1

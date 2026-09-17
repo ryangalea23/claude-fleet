@@ -86,8 +86,10 @@ if ($Restore -or $Demo) {
         $i++
         $dot = if ($s.state -eq 'waiting') { $C.red } elseif ($s.state -eq 'ended') { $C.grey } else { $C.blue }
         Write-Host ("{0}{1}{2} {3,2}  {4}{5}{6} {7}{8}{9} {10}" -f $dot, $G.dot, $C.reset, $i,
-            $C.bold, $s.account, $C.reset, $C.grey, $s.where, $C.reset, (Fit $s.title 46))
-        Write-Host ("     $($C.grey)$($s.resume)$($C.reset)")
+            $C.bold, (Clean-Text $s.account), $C.reset, $C.grey, (Clean-Text $s.where), $C.reset, (Fit $s.title 46))
+        # The snapshot file is read back from disk, so its text is cleaned like any other
+        # untrusted text before it reaches the terminal.
+        Write-Host ("     $($C.grey)$(Clean-Text $s.resume)$($C.reset)")
     }
     Write-Host ''
     Write-Host "$($C.grey)paste a line to resume that session in this tab$($C.reset)"
@@ -112,6 +114,9 @@ function Get-HookState($vendor) {
     return $map
 }
 
+# A path goes inside single quotes in a pasted command, so double any single quote in it.
+function Quote-Ps([string]$s) { "'" + ($s -replace "'", "''") + "'" }
+
 $claudeHooks = Get-HookState 'claude'
 $codexHooks = Get-HookState 'codex'
 $sessions = [System.Collections.ArrayList]@()
@@ -125,6 +130,8 @@ foreach ($account in $accounts) {
     if ($prev) { Set-Item env:CLAUDE_CONFIG_DIR $prev } else { Remove-Item env:CLAUDE_CONFIG_DIR -EA SilentlyContinue }
 
     foreach ($a in $agents) {
+        # The id is pasted into a command, so accept only what a session id looks like.
+        if ("$($a.sessionId)" -notmatch '^[A-Za-z0-9-]+$') { continue }
         $hk = $claudeHooks[$a.sessionId]
         $cwd = if ($hk -and $hk.cwd) { $hk.cwd } else { $a.cwd }
         # Belt and braces with the hook's own filter: never show a title that came from an
@@ -141,7 +148,7 @@ foreach ($account in $accounts) {
             state   = if ($hk) { $hk.state } elseif ($a.status -eq 'busy') { 'working' } else { 'idle' }
             lastSeen = if ($hk -and $hk.updatedAt) { $hk.updatedAt } else { (Get-Date).ToString('o') }
             # Everything needed to get back in: the folder, the account, the session.
-            resume  = "cd '$cwd'; $(Get-LaunchCommand $FleetCfg $account 'claude') --resume $($a.sessionId)"
+            resume  = "cd $(Quote-Ps $cwd); $(Get-LaunchCommand $FleetCfg $account 'claude') --resume $($a.sessionId)"
         })
     }
 }
@@ -185,7 +192,7 @@ foreach ($account in $accounts) {
                       elseif ($rollTitle) { $rollTitle } else { '(codex session)' }
             state   = if ($hk) { $hk.state } else { 'unknown' }
             lastSeen = $f.LastWriteTime.ToString('o')
-            resume  = if ($cwd) { "cd '$cwd'; $(Get-LaunchCommand $FleetCfg $account 'codex') resume $id" } else { "$(Get-LaunchCommand $FleetCfg $account 'codex') resume $id" }
+            resume  = if ($cwd) { "cd $(Quote-Ps $cwd); $(Get-LaunchCommand $FleetCfg $account 'codex') resume $id" } else { "$(Get-LaunchCommand $FleetCfg $account 'codex') resume $id" }
         })
     }
 }

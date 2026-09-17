@@ -53,9 +53,10 @@ function Get-TailLines($path, $bytes = 262144) {
 
 function Trunc($s, $n) {
     if (-not $s) { return '' }
-    # Strip box-drawing/banner art and any non-printable noise - pasted banners otherwise
-    # render as a row of garbage.
-    $s = ($s -replace '[^ -~]', ' ') -replace '[-=_*#~|]{3,}', ' '
+    # Strip control characters (see Clean-Text in lib/tui.ps1), box-drawing and block
+    # characters, and runs of ASCII banner art - pasted banners otherwise render as a row of
+    # garbage. Other non-ASCII text (accents, CJK, symbols) is kept.
+    $s = ((Clean-Text $s) -replace '[\u2500-\u259F]', ' ') -replace '[-=_*#~|]{3,}', ' '
     $s = ($s -replace '\s+', ' ').Trim()
     if (-not $s) { return '' }
     if ($Full -or $s.Length -le $n) { $s } else { $s.Substring(0, $n - 1) + '.' }
@@ -468,7 +469,7 @@ function Show-Cards($rows) {
         }
 
         $lines = @()
-        $left = "$dot$($G.dot)$($C.reset) $($C.bold)$($r.Acct)$($C.reset) $($C.grey)$($G.middot)$($C.reset) $(Fit $r.Where 20)"
+        $left = "$dot$($G.dot)$($C.reset) $($C.bold)$(Fit $r.Acct 12)$($C.reset) $($C.grey)$($G.middot)$($C.reset) $(Fit $r.Where 20)"
         $lines += Split-Line $left "$stateTxt $($C.grey)$($r.Idle)$($C.reset)" $inner
         $lines += ''
         $lines += "$($C.white)$(Fit $r.Label $inner)$($C.reset)"
@@ -532,7 +533,7 @@ function Show-Rows($rows, [switch]$Group) {
         if (-not $All -and $r.State -eq 'done' -and $r.IdleMin -gt 60) { $hidden++; continue }
         $flag = switch ($r.State) { 'WAITING' { '>>' } 'working' { '..' } default { 'ok' } }
         $pct  = if ($null -ne $r.Pct) { "{0,3}%" -f $r.Pct } else { '    ' }
-        "  {0} {1,-7} {2,-17} {3,-7} {4} {5,4}  {6}" -f $flag, $r.Acct, (Trunc $r.Where 17), $r.Prog, $pct, $r.Idle, (Trunc $r.Label 46)
+        "  {0} {1,-7} {2,-17} {3,-7} {4} {5,4}  {6}" -f $flag, (Trunc $r.Acct 12), (Trunc $r.Where 17), $r.Prog, $pct, $r.Idle, (Trunc $r.Label 46)
         if ($Detail) {
             if ($r.Plan)  { "       plan:  " + (Trunc $r.Plan 74) }
             if ($r.Chat)  { "       chat:  " + (Trunc $r.Chat 74) }
