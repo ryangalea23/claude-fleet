@@ -47,7 +47,9 @@ param(
     # Accepted for older scripts that passed it. Healing is already off unless -Heal.
     [switch]$NoHeal,
     # Render made-up data from demo/fixture.json. Calls nothing and reads no credentials.
-    [switch]$Demo
+    [switch]$Demo,
+    # Which step of the demo story to draw. -Watch advances it; dash and fleet pass their own.
+    [int]$DemoTick = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,6 +60,7 @@ $accounts = $FleetCfg.Accounts
 # One renderer for both dashboards - see the note in lib/tui.ps1 about why this is not
 # copied into each script.
 . "$PSScriptRoot\lib\tui.ps1"
+. "$PSScriptRoot\lib\demo.ps1"
 Init-Tui -Ascii:$Ascii
 $C = Get-TuiColors
 $G = Get-TuiGlyphs
@@ -377,7 +380,8 @@ if (-not $ClaudeOnly) { $vendors += 'codex' }
 function Get-DemoEntries {
     $fx = Get-Content (Join-Path $PSScriptRoot 'demo\fixture.json') -Raw | ConvertFrom-Json
     $now = [datetimeoffset]::Now
-    foreach ($u in @($fx.usage | Where-Object { $_.vendor -in $vendors })) {
+    foreach ($raw in @($fx.usage | Where-Object { $_.vendor -in $vendors })) {
+        $u = Resolve-DemoEntry $raw $DemoTick
         $runway = if ($u.runway) {
             $col = switch ($u.runway.tone) { 'ok' { $C.green } 'bad' { $C.red } default { $C.yellow } }
             $txt = $u.runway.text -replace '\{ok\}', $G.ok
@@ -391,7 +395,8 @@ function Get-DemoEntries {
                 [pscustomobject]@{
                     Label  = $w.label
                     Full   = $w.full
-                    Pct    = $w.pct
+                    # A step can move one window's bar: "windowPct": { "session": 17 }.
+                    Pct    = if ($u.windowPct -and $null -ne $u.windowPct.($w.label)) { $u.windowPct.($w.label) } else { $w.pct }
                     Reset  = if ($null -ne $w.resetInMinutes) { Format-Dur ($now.AddMinutes($w.resetInMinutes + 0.5).ToString('o')) } else { '-' }
                     Marker = $w.marker
                 }
@@ -416,6 +421,8 @@ function Parse-Every($s) {
 
 if ($Watch) {
     $secs = Parse-Every $Every
+    # The demo calls nothing, so it can play its story at one step a second.
+    if ($Demo -and -not $PSBoundParameters.ContainsKey('Every')) { $secs = 1; $Every = '1s' }
     # Without a real terminal there is no q to press and no screen to restore, so the
     # loop would run forever inside whatever captured it. Refuse instead of hanging.
     if ([Console]::IsOutputRedirected) {
@@ -436,6 +443,7 @@ if ($Watch) {
             Write-Host -NoNewline "$ESC[H$ESC[2J"
             Write-Host $text
             Write-Host $foot
+            if ($Demo) { $DemoTick++ }
             $until = (Get-Date).AddSeconds($secs)
             while ((Get-Date) -lt $until) {
                 if ($canPoll -and [Console]::KeyAvailable) {

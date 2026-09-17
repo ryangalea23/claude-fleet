@@ -1,5 +1,5 @@
 {
-  "_note": "Made-up data for the -Demo switch. Every project, prompt and id here is invented. Times are minutes from now (resetInMinutes, retryInMinutes) or minutes ago (idleMin, ageMin, takenMinutesAgo).",
+  "_note": "Made-up data for the -Demo switch. Every project, prompt and id here is invented. Times are minutes from now (resetInMinutes, retryInMinutes) or minutes ago (idleMin, ageMin, takenMinutesAgo). steps is the -Watch story: at tick N every step with at <= N is applied on top of the entry (see lib/demo.ps1).",
   "usage": [
     {
       "vendor": "claude", "account": "work", "status": "ok", "plan": "max", "source": "oauth",
@@ -9,6 +9,10 @@
         { "label": "session", "full": "session", "pct": 74, "resetInMinutes": 131, "marker": 44 },
         { "label": "week", "full": "week", "pct": 58, "resetInMinutes": 4210, "marker": 42 },
         { "label": "opus", "full": "Opus week", "pct": 81, "resetInMinutes": 4210, "marker": 42 }
+      ],
+      "steps": [
+        { "at": 5, "headPct": 57, "windowPct": { "session": 71, "week": 57 } },
+        { "at": 9, "windowPct": { "session": 69, "week": 57 } }
       ]
     },
     {
@@ -19,6 +23,10 @@
         { "label": "session", "full": "session", "pct": 19, "resetInMinutes": 96, "marker": 32 },
         { "label": "week", "full": "week", "pct": 63, "resetInMinutes": 7380, "marker": 88 },
         { "label": "extra", "full": "extra usage", "pct": 90, "resetInMinutes": null, "marker": null }
+      ],
+      "steps": [
+        { "at": 3, "headPct": 17, "runway": { "text": "empty in 46m", "tone": "warn" }, "windowPct": { "session": 17 } },
+        { "at": 7, "headPct": 14, "runway": { "text": "empty in 38m", "tone": "bad" }, "windowPct": { "session": 14 } }
       ]
     },
     {
@@ -33,6 +41,9 @@
         { "label": "week", "full": "week", "pct": 71, "resetInMinutes": 5630, "marker": 56 },
         { "label": "spark 5h", "full": "GPT Spark session", "pct": 100, "resetInMinutes": 300, "marker": 100 },
         { "label": "spark wk", "full": "GPT Spark week", "pct": 96, "resetInMinutes": 5630, "marker": 56 }
+      ],
+      "steps": [
+        { "at": 6, "headPct": 69, "windowPct": { "week": 69 } }
       ]
     },
     {
@@ -56,7 +67,12 @@
       "name": "billing-service-k3", "branch": "feat/invoice-retries",
       "chat": "Add retry with backoff to the invoice sender and cover it with tests",
       "ask": "Run the integration suite again and tell me what still fails",
-      "doing": "Two tests still fail in webhook_test.go. Both expect the old status code. Want me to update them?"
+      "doing": "Two tests still fail in webhook_test.go. Both expect the old status code. Want me to update them?",
+      "steps": [
+        { "at": 3, "state": "working", "idleMin": 0, "ask": "Yes, update both tests", "doing": "Edit" },
+        { "at": 5, "done": 6, "doing": "Bash" },
+        { "at": 8, "done": 7, "doing": "Bash" }
+      ]
     },
     {
       "account": "personal", "where": "docs-site", "state": "WAITING", "idleMin": 6, "ageMin": 40,
@@ -70,26 +86,43 @@
       "done": 7, "total": 9, "plan": "2026-09-12-rate-limiter",
       "name": "api-server-a9", "branch": "rate-limiter",
       "chat": "Replace the in-memory rate limiter with a Redis token bucket",
-      "ask": "Continue with task 8", "doing": "Bash"
+      "ask": "Continue with task 8", "doing": "Bash",
+      "steps": [
+        { "at": 2, "done": 8, "doing": "Edit" },
+        { "at": 6, "state": "WAITING", "idleMin": 0, "done": 9, "doing": "All 9 tasks pass and the branch is pushed. Want me to open the pull request?" }
+      ]
     },
     {
       "account": "work", "where": "api-server", "state": "working", "idleMin": 1, "ageMin": 35,
       "name": "api-server-7f", "branch": "fix/pagination-cursor",
       "chat": "The /orders endpoint returns duplicates on page 2 when two rows share a timestamp",
-      "ask": "Find the root cause before changing anything", "doing": "Grep"
+      "ask": "Find the root cause before changing anything", "doing": "Grep",
+      "steps": [
+        { "at": 4, "doing": "Read" },
+        { "at": 9, "doing": "Edit" }
+      ]
     },
     {
       "account": "lab", "where": "mobile-app", "state": "working", "idleMin": 1, "ageMin": 18,
       "name": "Dark mode", "branch": "dark-mode",
       "chat": "Add a dark theme that follows the system setting",
-      "ask": "Start with the settings screen", "doing": "Edit"
+      "ask": "Start with the settings screen", "doing": "Edit",
+      "steps": [
+        { "at": 4, "doing": "Bash" },
+        { "at": 8, "state": "WAITING", "idleMin": 0, "doing": "The settings screen follows the system theme now. Should the charts switch too?" }
+      ]
     },
     {
       "account": "personal", "where": "data-pipeline", "state": "working", "idleMin": 3, "ageMin": 64,
       "done": 1, "total": 6, "plan": "2026-09-14-nightly-backfill",
       "name": "data-pipeline-2c", "branch": null,
       "chat": "Write a backfill job for the events table and make it safe to re-run",
-      "ask": "Go ahead with task 2", "doing": "Write"
+      "ask": "Go ahead with task 2", "doing": "Write",
+      "steps": [
+        { "at": 2, "doing": "Bash" },
+        { "at": 4, "done": 2, "doing": "Edit" },
+        { "at": 7, "done": 3, "doing": "Write" }
+      ]
     },
     {
       "account": "work", "where": "infra", "state": "idle", "idleMin": 22, "ageMin": 300,
@@ -110,7 +143,11 @@
       "title": "Speed up the nightly reindex",
       "chat": "Profile the reindex job and find the slowest step",
       "doing": "shell", "model": "gpt-5.6-terra", "source": "exec",
-      "threadId": "7c0e5b2a-41d9-4f3e-8a6b-2d91c4e7f035", "parentId": null
+      "threadId": "7c0e5b2a-41d9-4f3e-8a6b-2d91c4e7f035", "parentId": null,
+      "steps": [
+        { "at": 4, "doing": "apply_patch" },
+        { "at": 7, "state": "WAITING", "idleMin": 0, "doing": "The tokenizer is the slow step. A cache cuts the run from 42 to 11 minutes. Apply it?" }
+      ]
     },
     {
       "account": "personal", "where": "fix/flaky-tests", "state": "WAITING", "idleMin": 4, "ageMin": 55,

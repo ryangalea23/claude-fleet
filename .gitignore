@@ -16,6 +16,7 @@
 !lib/
 !lib/tui.ps1
 !lib/config.ps1
+!lib/demo.ps1
 !lib/codex-threads.js
 !hooks/
 !hooks/fleet-hook.js

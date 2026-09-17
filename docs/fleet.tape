@@ -11,13 +11,15 @@ Set Theme "Catppuccin Mocha"
 Set TypingSpeed 40ms
 
 # Startup is hidden so the first frame already shows the rendered dashboard.
+# -Demo -Watch plays a scripted story: sessions finish tasks, ask for input, and get answers.
 Hide
 Type "$PSStyle.OutputRendering = 'Ansi'; function prompt { '> ' }; Clear-Host"
 Enter
 Sleep 1s
 Type "./fleet.ps1 -Demo -Watch"
 Enter
-Sleep 4s
+Sleep 1500ms
 Show
 
-Sleep 6s
+# The demo story takes about ten refreshes, one a second, then holds still.
+Sleep 15s

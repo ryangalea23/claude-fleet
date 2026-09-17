@@ -11,6 +11,7 @@
 #   fleet -Plain     dense rows (the default when output is piped)
 #   fleet -Compact   one coloured line per session
 #   fleet -Demo      made-up sessions from demo/fixture.json (screenshots, trying it out)
+#   fleet -Demo -Watch   the same, played as a short story that refreshes every second
 #
 # Accounts come from config.json (see lib/config.ps1). The richest view needs the state
 # hook in hooks/fleet-hook.js wired into Claude Code and Codex; without it, fleet falls
@@ -22,12 +23,15 @@ param([switch]$Watch, [int]$Hours = 6, [switch]$Usage, [switch]$Full, [switch]$A
       # there is no way to prove the cards still line up at 80 or 160 columns.
       [int]$Width = 0,
       # Render made-up sessions from demo/fixture.json instead of reading this machine.
-      [switch]$Demo)
+      [switch]$Demo,
+      # Which step of the demo story to draw. -Watch advances it; dash passes its own.
+      [int]$DemoTick = 0)
 
 # Cards for a person, rows for a script. A redirected stdout is an agent or a pipeline
 # reading this, and it wants the dense text, same rule as ai-usage.
 . "$PSScriptRoot\lib\tui.ps1"
 . "$PSScriptRoot\lib\config.ps1"
+. "$PSScriptRoot\lib\demo.ps1"
 Init-Tui -Ascii:$Ascii
 $UseCards = $Cards -or (-not $Plain -and -not [Console]::IsOutputRedirected)
 
@@ -542,7 +546,11 @@ function Show-Rows($rows, [switch]$Group) {
 # Demo rows have the same shape the live readers build, so every renderer runs unchanged.
 # Times are stored as minutes ago, so the demo never looks stale.
 function Get-DemoRows($list, $now) {
-    foreach ($d in @($list)) {
+    foreach ($raw in @($list)) {
+        $d = Resolve-DemoEntry $raw $DemoTick
+        # One tick is one minute of story. A working session is active, so its idle time
+        # stays put; anything else has been idle since its state began.
+        if ($d.state -ne 'working') { $d.idleMin = [int]$d.idleMin + ($d.tick - $d.stateSince) }
         [pscustomobject]@{
             Acct = $d.account; Where = $d.where; State = $d.state
             Age = (Span $now.AddMinutes(-$d.ageMin)); Idle = (Span $now.AddMinutes(-$d.idleMin)); IdleMin = [int]$d.idleMin
@@ -685,9 +693,21 @@ function Show-Fleet {
     Show-Rows $crows -Group
 
 
-    if ($Usage) { ""; & "$PSScriptRoot\ai-usage.ps1" -Plain -Demo:$Demo }
+    if ($Usage) { ""; & "$PSScriptRoot\ai-usage.ps1" -Plain -Demo:$Demo -DemoTick $DemoTick }
 }
 
-if ($Watch) {
+if ($Watch -and $Demo) {
+    Clear-Host
+    # The demo is a story, so it moves at one step a second unless -Every says otherwise.
+    if (-not $PSBoundParameters.ContainsKey('Every')) { $Every = 1 }
+    while ($true) {
+        # Build the whole frame, then overwrite the screen in place with one write. Clearing
+        # first would show a blank frame between refreshes, which reads as flicker.
+        $frame = @(Show-Fleet) + @('', "(demo refreshing every $Every s - Ctrl+C to stop)")
+        Write-Host -NoNewline ("$ESC[H" + ($frame -join "$ESC[K`n") + "$ESC[K$ESC[J")
+        $DemoTick++
+        Start-Sleep -Seconds $Every
+    }
+} elseif ($Watch) {
     while ($true) { Clear-Host; Show-Fleet; "`n(refreshing every $Every s - Ctrl+C to stop)"; Start-Sleep -Seconds $Every }
 } else { Show-Fleet }

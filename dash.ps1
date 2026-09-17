@@ -11,6 +11,7 @@
 #   dash -Ascii       no colour/unicode - screenshots, non-UTF8 consoles
 #   dash -Once        force a single frame even if -Watch is also passed
 #   dash -Demo        made-up usage and sessions from demo/fixture.json
+#   dash -Demo -Watch the same, played as a short story that refreshes every second
 
 param(
     [switch]$Watch,
@@ -50,13 +51,16 @@ function Parse-Every($s) {
 $script:UsageEntries = $null
 $script:UsageFetchedAt = $null
 $USAGE_TTL_SECS = 900
+# Which step of the demo story to draw. Advanced once per -Watch frame.
+$script:DemoTick = 0
 
 function Get-UsageEntries {
     param([switch]$Force)
     $stale = -not $script:UsageEntries -or -not $script:UsageFetchedAt -or
              ((Get-Date) - $script:UsageFetchedAt).TotalSeconds -gt $USAGE_TTL_SECS
-    if ($Force -or $stale) {
-        $raw = & "$PSScriptRoot\ai-usage.ps1" -Json -Demo:$Demo
+    # Demo figures cost nothing to read and change every step, so never cache them.
+    if ($Force -or $stale -or $Demo) {
+        $raw = & "$PSScriptRoot\ai-usage.ps1" -Json -Demo:$Demo -DemoTick $script:DemoTick
         try {
             $j = ($raw -join "`n" | ConvertFrom-Json)
             $script:UsageEntries = @($j)
@@ -108,7 +112,7 @@ function Get-FleetLines {
     # -Rows, not -Cards: dash shares one pane with the usage block, and a five-line card
     # per session pushes the fleet off the screen at six sessions. -Cards is still right
     # when fleet has a whole tab to itself.
-    & "$PSScriptRoot\fleet.ps1" -Compact -Hours $Hours -Ascii:$Ascii -Width $Width -Demo:$Demo
+    & "$PSScriptRoot\fleet.ps1" -Compact -Hours $Hours -Ascii:$Ascii -Width $Width -Demo:$Demo -DemoTick $script:DemoTick
 }
 
 # --- assembly ------------------------------------------------------------------
@@ -138,6 +142,8 @@ function Render-Dash {
 # --- main ----------------------------------------------------------------------
 
 $secs = Parse-Every $Every
+# The demo reads a fixture, not the machine, so it plays at one step a second.
+if ($Demo -and -not $PSBoundParameters.ContainsKey('Every')) { $secs = 1; $Every = '1s' }
 $runOnce = $Once -or -not $Watch
 
 if (-not $runOnce) {
@@ -158,10 +164,13 @@ if (-not $runOnce) {
             $text = (Render-Dash) -join "`n"
             $last = $text
             $quit = if ($canPoll) { 'press q to quit' } else { 'press Ctrl+C to quit' }
-            $foot = "$($C.grey)fleet refreshes every $Every $($G.middot) usage every 15m $($G.middot) updated $(Get-Date -Format 'HH:mm:ss') $($G.middot) $quit$($C.reset)"
-            Write-Host -NoNewline "$ESC[H$ESC[2J"
-            Write-Host $text
-            Write-Host $foot
+            $usageEvery = if ($Demo) { $Every } else { '15m' }
+            $foot = "$($C.grey)fleet refreshes every $Every $($G.middot) usage every $usageEvery $($G.middot) updated $(Get-Date -Format 'HH:mm:ss') $($G.middot) $quit$($C.reset)"
+            # One write that homes the cursor and overwrites in place, clearing each line's tail
+            # and whatever is left below. Clearing the screen first shows a blank frame between
+            # refreshes, which is visible as flicker.
+            Write-Host -NoNewline ("$ESC[H" + (($text -split "`n") -join "$ESC[K`n") + "$ESC[K`n$foot$ESC[K$ESC[J")
+            if ($Demo) { $script:DemoTick++ }
             $until = (Get-Date).AddSeconds($secs)
             while ((Get-Date) -lt $until) {
                 if ($canPoll -and [Console]::KeyAvailable) {
