@@ -4,8 +4,6 @@ PowerShell terminal tools for people who run several Claude Code and Codex CLI s
 
 ![dash: plan usage on top, running sessions below](docs/dash.gif)
 
-Every recording on this page uses made-up data from `demo/fixture.json`. Run any tool with `-Demo` to see the same thing on your own machine.
-
 ## The tools
 
 ### ai-usage
@@ -161,9 +159,13 @@ A lane runs with nobody watching, so check these two settings before you start o
 ## Recording the GIFs
 
 ```powershell
+vhs docs/ai-usage.tape
 vhs docs/dash.tape
 vhs docs/fleet.tape
 ```
+
+Each tape runs its tool with `-Demo`, which reads made-up accounts and sessions from
+`demo/fixture.json` instead of yours. Pass `-Demo` to any tool to see the same thing.
 
 vhs 0.12.0 finishes without writing the file. Use 0.11.0.
 
