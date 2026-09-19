@@ -69,6 +69,10 @@ function main() {
   // session. No id, no write.
   if (!id) process.exit(0);
 
+  // The id becomes a file name below. The CLI generates it, so this is not expected to
+  // fire, but an id with a slash or a dot-dot would write outside DIR, so refuse it.
+  if (!/^[A-Za-z0-9-]+$/.test(id)) process.exit(0);
+
   // A subagent shares nothing useful with its parent's row and would overwrite it.
   if (ev.agent_id || ev.agent_type) process.exit(0);
 

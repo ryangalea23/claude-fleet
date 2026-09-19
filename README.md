@@ -102,7 +102,11 @@ A lane runs with nobody watching, so check these two settings before you start o
 
 ## Install
 
-1. Clone or download the repo anywhere.
+1. Clone it anywhere.
+
+   ```powershell
+   git clone https://github.com/ryangalea23/claude-fleet
+   ```
 
 2. Add one line to your PowerShell profile (`notepad $PROFILE`):
 

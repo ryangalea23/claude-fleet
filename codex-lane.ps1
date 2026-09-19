@@ -60,15 +60,26 @@ function Resolve-Model([string]$m) { if ($ModelIds.ContainsKey($m)) { $ModelIds[
 # Messages often quote the bad value back, so clean it: a rejected name must not carry escape codes to the console.
 function Fail([string]$msg) { [Console]::Error.WriteLine("codex-lane: $(Clean-Text $msg)"); exit 2 }
 
-# Every value below ends up inside a cmd.exe /c line, where & | < > ^ and % mean something.
-# Accept only what each value should look like, and fail before any process starts.
+# Every value below ends up inside a cmd.exe /c line. Accept only what each value should
+# look like, and fail before any process starts.
 function Assert-ModelId([string]$m) {
   $id = Resolve-Model $m
   if ($id -notmatch '^[A-Za-z0-9._:-]+$') { Fail "model '$m' is not a valid model id (letters, digits, . _ : - only)" }
   return $id
 }
+# Paths are always written into the /c line wrapped in double quotes, so cmd.exe treats
+# & and ^ inside them as literal text. That is why a folder called R&D still works and is
+# not rejected here. What we reject is anything that could end the quoted run, or that is
+# never legal in a Windows path anyway:
+#   "      would close the quoting and start a new command
+#   %      would expand an environment variable
+#   CR/LF  would start a second line
+#   < > |  are illegal in Windows paths, so refusing them costs nothing and takes the
+#          redirection characters off the table entirely
+# KEEP THE QUOTES. If $line is ever rebuilt so a path sits outside double quotes, & and ^
+# become live again and this check is no longer enough on its own.
 function Assert-CmdPath([string]$what, [string]$p) {
-  if ($p -match '["%\r\n]') { Fail "$what '$p' contains a character that is unsafe on a cmd.exe line (a double quote, a percent sign or a newline)" }
+  if ($p -match '["%<>|\r\n]') { Fail "$what '$p' contains a character that is unsafe on a cmd.exe line (a double quote, a percent sign, < > | or a newline)" }
 }
 
 function Get-LaneDir {
