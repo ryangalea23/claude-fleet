@@ -23,7 +23,9 @@
 !demo/
 !demo/fixture.json
 !docs/
+!docs/ai-usage.tape
 !docs/dash.tape
 !docs/fleet.tape
+!docs/ai-usage.gif
 !docs/dash.gif
 !docs/fleet.gif

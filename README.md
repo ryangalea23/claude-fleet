@@ -4,13 +4,13 @@ PowerShell terminal tools for people who run several Claude Code and Codex CLI s
 
 ![dash: plan usage on top, running sessions below](docs/dash.gif)
 
-![fleet: one card per running session](docs/fleet.gif)
-
-Both recordings use made-up data from `demo/fixture.json`. Run any of them with `-Demo` to see the same thing.
+Every recording on this page uses made-up data from `demo/fixture.json`. Run any tool with `-Demo` to see the same thing on your own machine.
 
 ## The tools
 
 ### ai-usage
+
+![ai-usage: one card per account, showing how much plan is left](docs/ai-usage.gif)
 
 Shows how much plan usage is left on every Claude Code and Codex account. Every number is headroom left, not usage spent. It gets the figures from [quota-axi](https://github.com/kunchenguid/quota-axi), a separate npm package. quota-axi reads your Claude Code and Codex login credential files (`.credentials.json` and `auth.json`) and sends those tokens to the vendors' usage endpoints. Because it handles your logins, and because npm packages can run scripts when they install, read [its source](https://github.com/kunchenguid/quota-axi) before you install it. It does not start a model turn, so checking costs nothing. Results are cached for two minutes so a dashboard can't get you rate limited.
 
@@ -26,6 +26,8 @@ If a Claude token has expired, the account shows "sign-in expired". `-Heal` fixe
 
 ### fleet
 
+![fleet: one card per running session](docs/fleet.gif)
+
 Shows what every local agent session is doing: which account, which folder, whether it is working or waiting on you, what it was asked, and plan progress when the session reports it. It reads files the agents already write, so watching costs them nothing.
 
 ```powershell
@@ -40,7 +42,7 @@ It works on transcripts alone. For better answers (the first thing you asked, th
 
 ### dash
 
-`ai-usage` and `fleet` in one pane. Usage refreshes every 15 minutes, sessions every `-Every` (default 120s).
+The recording at the top of this page is `dash`. It puts `ai-usage` and `fleet` in one pane. Usage refreshes every 15 minutes, sessions every `-Every` (default 120s).
 
 ```powershell
 dash -Watch
